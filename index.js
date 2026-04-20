@@ -2,9 +2,9 @@ const client = require('discord-rich-presence')('861702238472241162');
 const { app, BrowserWindow } = require('electron');
 require("dotenv").config();
 
-const iTunes = require("./bridge/iTunesBridge.js");
+const MusicBridge = require("./bridge/iTunesBridge.js");
 const { fetchAlbumArt } = require("./bridge/albumArt.js");
-const iTunesApp = new iTunes();
+const musicApp = new MusicBridge();
 
 let RPCInterval = 0;
 let state = "Not Opened";
@@ -33,8 +33,8 @@ function setTime(sec) {
 app.whenReady().then(createWindow);
 
 async function update() {
-  currentSong = await iTunesApp.getCurrentSong();
-  if (currentSong) state = await iTunesApp.getState()
+  currentSong = await musicApp.getCurrentSong();
+  if (currentSong) state = await musicApp.getState()
 
   if (currentSong.name && currentSong.name.includes(" - ")) {
     const split = currentSong.name.split(/\s*\-\s*/);
