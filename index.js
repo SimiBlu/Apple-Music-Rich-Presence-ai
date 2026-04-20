@@ -3,6 +3,7 @@ const { app, BrowserWindow } = require('electron');
 require("dotenv").config();
 
 const iTunes = require("./bridge/iTunesBridge.js");
+const { fetchAlbumArt } = require("./bridge/albumArt.js");
 const iTunesApp = new iTunes();
 
 let RPCInterval = 0;
@@ -10,6 +11,7 @@ let state = "Not Opened";
 let currentSong = {};
 let startDate = new Date();
 let lastSong = "";
+let currentArtUrl = 'applemusic';
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -45,19 +47,21 @@ async function update() {
   let fullTitle = currentSong ? `${currentSong.artist || "Unknown Artist"} - ${currentSong.name}` : "No Song";
 
   if (state == "Playing" && (fullTitle !== lastSong || !lastSong)) {
-    startDate = new Date();
     lastSong = `${currentSong.artist || "Unknown Artist"} - ${currentSong.name}`;
-    startDate.setSeconds(new Date().getSeconds() - parseInt(currentSong.elapsed) - 1);
+
+    const artUrl = await fetchAlbumArt(currentSong.artist, currentSong.album);
+    currentArtUrl = artUrl || 'applemusic';
   }
 
+  const elapsed = parseInt(currentSong.elapsed);
   startDate = new Date();
-  startDate.setSeconds(new Date().getSeconds() - parseInt(currentSong.elapsed));
+  if (!isNaN(elapsed)) startDate.setSeconds(startDate.getSeconds() - elapsed);
 
   client.updatePresence({
     state: (state == "Playing") ? `on ${currentSong.album || "Unknown"}` : state,
     details: `${currentSong.artist || "Unknown"} - ${currentSong.name || "Unknown"}`,
     startTimestamp: (state == "Playing") ? startDate.getTime() : Date.now(),
-    largeImageKey: 'applemusic',
+    largeImageKey: currentArtUrl,
     smallImageKey: (state == "Playing") ? "pause" : "play",
     smallImageText: state,
     largeImageText: (state == "Playing") ? `${fullTitle}` : "Idling",
